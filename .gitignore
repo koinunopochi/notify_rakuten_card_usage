@@ -1,0 +1,7 @@
+.env*
+.history*
+node_modules
+package-lock.json
+dist
+client_secret.json
+gmail-nodejs-quickstart.json
