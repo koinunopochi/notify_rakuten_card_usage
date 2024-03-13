@@ -23,7 +23,7 @@ class EmailTransactionService {
     return new WithdrawalAmount(Number(amount));
   }
   private _buildTransaction(date: string, snippet: string): Transaction {
-    const transactionDate = this._buildTransactionDate(new Date(date));
+    const transactionDate = this._buildTransactionDate(new Date(Number(date)));
     const withdrawalAmount = this._buildWithdrawalAmount(snippet);
     return new Transaction(transactionDate, withdrawalAmount);
   }
@@ -176,6 +176,7 @@ class EmailTransactionService {
     const gmailApiAdapter = new GmailApiAdapter(this._oauth2Client, query);
     const response = await gmailApiAdapter.getMessageIds();
     const messageIds = response.data.messages;
+    console.log("到達1");
     // メールがない場合
     if (messageIds === undefined) {
       console.log('メールがありません');
@@ -184,8 +185,10 @@ class EmailTransactionService {
     }
     for (const messageId of messageIds) {
       await this._processTransactionAndLabelMessage(String(messageId.id));
+       console.log('到達2');
     }
     await this._sendEmail(gmailApiAdapter);
+     console.log('到達3');
   }
 
   private _extractAmount(text: string): string | null {
