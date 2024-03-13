@@ -14,6 +14,9 @@ class EmailTransactionService {
     this._oauth2Client = oauth2Client;
     this._repository = repository;
   }
+  private _buildTransactionDate(date: Date): TransactionDate {
+    return new TransactionDate(date);
+  }
 
   public async fetchTransactions(query: string) {
     const gmailApiAdapter = new GmailApiAdapter(this._oauth2Client, query);
@@ -22,10 +25,14 @@ class EmailTransactionService {
     if (messageIds === undefined) return;
 
     for (const messageId of messageIds) {
-      const message = await gmailApiAdapter.getMessage(messageId.id);
-      const date = message.data.internalDate;
-      const transactionDate = new TransactionDate(date);
-      const snippet = message.data.snippet;
+      const res = await gmailApiAdapter.getMessage(messageId.id);
+      const data = res.data;
+      
+      const transactionDate = this._buildTransactionDate(
+        new Date(Number(data.internalDate))
+      );
+
+      const snippet = res.data.snippet;
       const amount = this.extractAmount(snippet);
       const withdrawalAmount = new WithdrawalAmount(amount);
       const transaction = new Transaction(transactionDate, withdrawalAmount);
@@ -34,12 +41,11 @@ class EmailTransactionService {
       await this._repository.save(transaction);
       console.log(transaction.value());
 
-    // メールにラベルを付与
-    await gmailApiAdapter.addLabelToMessage(
-      messageId.id,
-      'Label_3417572379770606098'
-    );
-
+      // メールにラベルを付与
+      await gmailApiAdapter.addLabelToMessage(
+        messageId.id,
+        'Label_3417572379770606098'
+      );
     }
     // 今月の取引を取得
     const nowYear = new Date().getFullYear();
@@ -142,7 +148,6 @@ class EmailTransactionService {
 
     return matches ? matches[1] : null;
   }
-
 }
 
 export default EmailTransactionService;
