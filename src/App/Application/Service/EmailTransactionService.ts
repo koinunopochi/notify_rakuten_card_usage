@@ -18,6 +18,11 @@ class EmailTransactionService {
     return new TransactionDate(date);
   }
 
+  private _buildWithdrawalAmount(snippet: string ): WithdrawalAmount {
+    const amount = this._extractAmount(snippet);
+    return new WithdrawalAmount(Number(amount));
+  }
+
   public async fetchTransactions(query: string) {
     const gmailApiAdapter = new GmailApiAdapter(this._oauth2Client, query);
     const response = await gmailApiAdapter.getMessageIds();
@@ -25,16 +30,14 @@ class EmailTransactionService {
     if (messageIds === undefined) return;
 
     for (const messageId of messageIds) {
-      const res = await gmailApiAdapter.getMessage(messageId.id);
+      const res = await gmailApiAdapter.getMessage(String(messageId.id));
       const data = res.data;
-      
+
       const transactionDate = this._buildTransactionDate(
         new Date(Number(data.internalDate))
       );
 
-      const snippet = res.data.snippet;
-      const amount = this.extractAmount(snippet);
-      const withdrawalAmount = new WithdrawalAmount(amount);
+      const withdrawalAmount = this._buildWithdrawalAmount(String(data.snippet));
       const transaction = new Transaction(transactionDate, withdrawalAmount);
 
       // 保存処理
@@ -43,7 +46,7 @@ class EmailTransactionService {
 
       // メールにラベルを付与
       await gmailApiAdapter.addLabelToMessage(
-        messageId.id,
+        String(messageId.id),
         'Label_3417572379770606098'
       );
     }
@@ -142,7 +145,7 @@ class EmailTransactionService {
     await gmailApiAdapter.sendMessage(raw);
   }
 
-  private extractAmount(text: string): string | null {
+  private _extractAmount(text: string): string | null {
     const pattern = /口座引落分：(\d+)円/;
     const matches = text.match(pattern);
 
