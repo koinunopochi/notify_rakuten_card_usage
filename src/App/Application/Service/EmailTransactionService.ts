@@ -36,7 +36,7 @@ class EmailTransactionService {
       const transactionDate = this._buildTransactionDate(
         new Date(Number(data.internalDate))
       );
-
+      // TODO:messageresponseの型を作成
       const withdrawalAmount = this._buildWithdrawalAmount(String(data.snippet));
       const transaction = new Transaction(transactionDate, withdrawalAmount);
 
