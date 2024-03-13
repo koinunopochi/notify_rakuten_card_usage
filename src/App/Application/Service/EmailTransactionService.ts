@@ -50,6 +50,13 @@ class EmailTransactionService {
     await this._repository.save(transaction);
   }
 
+  private async _yesterdayTransactions(): Promise<Transaction[]> {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayDate = new TransactionDate(yesterday);
+    return await this._repository.findByDateRange(yesterdayDate, yesterdayDate);
+  }
+
   private async _processTransactionAndLabelMessage(
     messageId: string
   ): Promise<void> {
@@ -63,7 +70,7 @@ class EmailTransactionService {
       'Label_3417572379770606098'
     );
   }
-  private async _getThisMonthTransactions(): Promise<Transaction[]>{
+  private async _getThisMonthTransactions(): Promise<Transaction[]> {
     const nowYear = new Date().getFullYear();
     const nowMonth = new Date().getMonth();
     const startDate = new TransactionDate(new Date(nowYear, nowMonth, 1));
@@ -84,17 +91,11 @@ class EmailTransactionService {
     for (const messageId of messageIds) {
       await this._processTransactionAndLabelMessage(String(messageId.id));
     }
-    
+
     const transactions = await this._getThisMonthTransactions();
 
     // 昨日の取引を取得
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayDate = new TransactionDate(yesterday);
-    const yesterdayTransactions = await this._repository.findByDateRange(
-      yesterdayDate,
-      yesterdayDate
-    );
+    const yesterdayTransactions = await this._yesterdayTransactions();
 
     // 今月の総額を作成
     let totalAmount = 0;
