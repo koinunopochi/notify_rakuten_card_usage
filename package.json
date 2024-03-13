@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/App/UI/Rest/server.js"
+    "start": "node dist/App/Adapter/Cli/FetchRakutenCardTransactions.js"
   },
   "keywords": [],
   "author": "",

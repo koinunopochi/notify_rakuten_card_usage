@@ -53,6 +53,7 @@ mongoose
   .then(() => {
     main()
       .catch(async (err) => {
+        console.error(err);
         const oauth2Client = await int();
         const query = 'query';
         const formattedStack = err.stack
@@ -88,7 +89,7 @@ mongoose
           message: htmlMessage,
         };
         await gmailApiAdapter.sendMessage(raw);
-        console.error(err);
+        
       })
       .finally(() => {
         mongoose.disconnect();

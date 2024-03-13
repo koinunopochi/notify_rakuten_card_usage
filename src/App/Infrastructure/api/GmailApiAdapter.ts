@@ -43,7 +43,7 @@ class GmailApiAdapter {
       },
     });
   }
-  private _makeBody = (params) => {
+  private _makeBody = (params:any) => {
     params.subject = new Buffer(params.subject).toString('base64'); //日本語対応
 
     const str = [
