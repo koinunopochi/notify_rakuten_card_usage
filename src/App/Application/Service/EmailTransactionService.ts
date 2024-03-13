@@ -14,6 +14,7 @@ class EmailTransactionService {
     this._oauth2Client = oauth2Client;
     this._repository = repository;
   }
+
   
   private _buildTransactionDate(date: Date): TransactionDate {
     return new TransactionDate(date);
@@ -32,8 +33,11 @@ class EmailTransactionService {
     const gmailApiAdapter = new GmailApiAdapter(this._oauth2Client, query);
     const response = await gmailApiAdapter.getMessageIds();
     const messageIds = response.data.messages;
-    if (messageIds === undefined) return;
-
+    // メールがない場合
+    if (messageIds === undefined){
+      // 今月分の取引をメール
+      return;
+    }
     for (const messageId of messageIds) {
       const res = await gmailApiAdapter.getMessage(String(messageId.id));
       const data = res.data;
