@@ -50,7 +50,9 @@ class EmailTransactionService {
     await this._repository.save(transaction);
   }
 
-  private async _processTransactionAndLabelMessage(messageId: string): Promise<void> {
+  private async _processTransactionAndLabelMessage(
+    messageId: string
+  ): Promise<void> {
     // メールにラベルを付与
     // TODO:messageresponseの型を作成
     const gmailApiAdapter = new GmailApiAdapter(this._oauth2Client, '');
@@ -60,6 +62,14 @@ class EmailTransactionService {
       messageId,
       'Label_3417572379770606098'
     );
+  }
+  private async _getThisMonthTransactions(): Promise<Transaction[]>{
+    const nowYear = new Date().getFullYear();
+    const nowMonth = new Date().getMonth();
+    const startDate = new TransactionDate(new Date(nowYear, nowMonth, 1));
+    const endDate = new TransactionDate(new Date(nowYear, nowMonth + 1, 0));
+
+    return await this._repository.findByDateRange(startDate, endDate);
   }
 
   public async fetchTransactions(query: string) {
@@ -74,16 +84,8 @@ class EmailTransactionService {
     for (const messageId of messageIds) {
       await this._processTransactionAndLabelMessage(String(messageId.id));
     }
-    // 今月の取引を取得
-    const nowYear = new Date().getFullYear();
-    const nowMonth = new Date().getMonth();
-    const startDate = new TransactionDate(new Date(nowYear, nowMonth, 1));
-    const endDate = new TransactionDate(new Date(nowYear, nowMonth + 1, 0));
-
-    const transactions = await this._repository.findByDateRange(
-      startDate,
-      endDate
-    );
+    
+    const transactions = await this._getThisMonthTransactions();
 
     // 昨日の取引を取得
     const yesterday = new Date();
