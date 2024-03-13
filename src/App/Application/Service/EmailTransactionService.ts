@@ -176,7 +176,6 @@ class EmailTransactionService {
     const gmailApiAdapter = new GmailApiAdapter(this._oauth2Client, query);
     const response = await gmailApiAdapter.getMessageIds();
     const messageIds = response.data.messages;
-    console.log("到達1");
     // メールがない場合
     if (messageIds === undefined) {
       console.log('メールがありません');
@@ -185,10 +184,8 @@ class EmailTransactionService {
     }
     for (const messageId of messageIds) {
       await this._processTransactionAndLabelMessage(String(messageId.id));
-       console.log('到達2');
     }
     await this._sendEmail(gmailApiAdapter);
-     console.log('到達3');
   }
 
   private _extractAmount(text: string): string | null {
