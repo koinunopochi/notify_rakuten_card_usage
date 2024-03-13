@@ -87,23 +87,11 @@ class EmailTransactionService {
     return totalAmount;
   }
 
-  public async fetchTransactions(query: string) {
-    const gmailApiAdapter = new GmailApiAdapter(this._oauth2Client, query);
-    const response = await gmailApiAdapter.getMessageIds();
-    const messageIds = response.data.messages;
-    // メールがない場合
-    if (messageIds === undefined) {
-      // 今月分の取引をメール
-      return;
-    }
-    for (const messageId of messageIds) {
-      await this._processTransactionAndLabelMessage(String(messageId.id));
-    }
-    
+  private async _sendEmail(gmailApiAdapter: GmailApiAdapter) : Promise<void>{
     // 今月の総額を作成
     const transactions = await this._getThisMonthTransactions();
     const totalAmount = this._sumTransactionValues(transactions);
-    
+
     // 昨日の総額を作成
     const yesterdayTransactions = await this._yesterdayTransactions();
     const yesterdayTotalAmount = this._sumTransactionValues(
@@ -171,6 +159,22 @@ class EmailTransactionService {
       message: messageBody,
     };
     await gmailApiAdapter.sendMessage(raw);
+  }
+
+  public async fetchTransactions(query: string) {
+    const gmailApiAdapter = new GmailApiAdapter(this._oauth2Client, query);
+    const response = await gmailApiAdapter.getMessageIds();
+    const messageIds = response.data.messages;
+    // メールがない場合
+    if (messageIds === undefined) {
+      console.log('メールがありません');
+      await this._sendEmail(gmailApiAdapter);
+      return;
+    }
+    for (const messageId of messageIds) {
+      await this._processTransactionAndLabelMessage(String(messageId.id));
+    }
+    await this._sendEmail(gmailApiAdapter);
   }
 
   private _extractAmount(text: string): string | null {
