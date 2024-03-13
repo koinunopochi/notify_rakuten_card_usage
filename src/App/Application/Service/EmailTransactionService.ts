@@ -79,6 +79,14 @@ class EmailTransactionService {
     return await this._repository.findByDateRange(startDate, endDate);
   }
 
+  private _sumTransactionValues(transactions: Transaction[]): number {
+    let totalAmount = 0;
+    transactions.forEach((transaction) => {
+      totalAmount += transaction.value().amount.value();
+    });
+    return totalAmount;
+  }
+
   public async fetchTransactions(query: string) {
     const gmailApiAdapter = new GmailApiAdapter(this._oauth2Client, query);
     const response = await gmailApiAdapter.getMessageIds();
@@ -91,23 +99,16 @@ class EmailTransactionService {
     for (const messageId of messageIds) {
       await this._processTransactionAndLabelMessage(String(messageId.id));
     }
-
-    const transactions = await this._getThisMonthTransactions();
-
-    // 昨日の取引を取得
-    const yesterdayTransactions = await this._yesterdayTransactions();
-
+    
     // 今月の総額を作成
-    let totalAmount = 0;
-    transactions.forEach((transaction) => {
-      totalAmount += transaction.value().amount.value();
-    });
-
+    const transactions = await this._getThisMonthTransactions();
+    const totalAmount = this._sumTransactionValues(transactions);
+    
     // 昨日の総額を作成
-    let yesterdayTotalAmount = 0;
-    yesterdayTransactions.forEach((transaction) => {
-      yesterdayTotalAmount += transaction.value().amount.value();
-    });
+    const yesterdayTransactions = await this._yesterdayTransactions();
+    const yesterdayTotalAmount = this._sumTransactionValues(
+      yesterdayTransactions
+    );
 
     console.log('今月の取引', transactions);
     console.log('今月の総額', totalAmount);
