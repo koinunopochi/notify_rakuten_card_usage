@@ -48,6 +48,7 @@ class EmailTransactionService {
       messageId
     );
     await this._repository.save(transaction);
+    console.log('取引を登録しました', transaction);
   }
 
   private async _yesterdayTransactions(): Promise<Transaction[]> {
@@ -59,8 +60,15 @@ class EmailTransactionService {
 
   private async _todayTransactions(): Promise<Transaction[]> {
     const today = new Date();
-    const todayDate = new TransactionDate(today);
-    return await this._repository.findByDateRange(todayDate, todayDate);
+    // 今日の日付の0時0分0秒を設定
+    today.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(today);
+    // 今日の日付の23時59分59秒に設定
+    endOfDay.setHours(23, 59, 59, 999);
+    return await this._repository.findByDateRange(
+      new TransactionDate(today),
+      new TransactionDate(endOfDay)
+    );
   }
 
   private async _processTransactionAndLabelMessage(
@@ -71,6 +79,11 @@ class EmailTransactionService {
     const gmailApiAdapter = new GmailApiAdapter(this._oauth2Client, '');
 
     await this._handleTransactionFromGmailMessage(gmailApiAdapter, messageId);
+    // id: 'Label_3553825594615419646',
+    // name: '取得済み_ステージング',
+
+    // id: 'Label_3417572379770606098',
+    // name: '取得済み',
     await gmailApiAdapter.addLabelToMessage(
       messageId,
       'Label_3417572379770606098'
@@ -148,13 +161,17 @@ class EmailTransactionService {
 <body style="font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9; color: #333;">
   <div style="background-color: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
     <h2 style="color: #4CAF50;">取引概要</h2>
-    <p style="margin-bottom: 10px;"><strong>昨日との差額：</strong><span style="color: #555;">${
+    <p style="margin-bottom: 10px;"><strong>前日の総額＋昨日の金額：</strong><span style="color: #555;">${
       totalAmount - yesterdayTotalAmount
     } + ${yesterdayTotalAmount} = ${totalAmount}</span></p>
     <p style="margin-bottom: 10px;"><strong>今月の取引：</strong><span style="color: #555;">${
       transactions.length
     }件</span></p>
     <p style="margin-bottom: 10px;"><strong>今月の総額：</strong><span style="color: #555;">${totalAmount}円</span></p>
+    <p style="margin-bottom: 10px;"><strong>本日の取引：</strong><span style="color: #555;">${
+      todayTransactions.length
+    }件</span></p>
+    <p style="margin-bottom: 10px;"><strong>本日の総額：</strong><span style="color: #555;">${todayTotalAmount}円</span></p>
     <p style="margin-bottom: 10px;"><strong>昨日の取引：</strong><span style="color: #555;">${
       yesterdayTransactions.length
     }件</span></p>
