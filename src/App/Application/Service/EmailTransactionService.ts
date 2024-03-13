@@ -39,6 +39,29 @@ class EmailTransactionService {
     return transaction;
   }
 
+  private async _handleTransactionFromGmailMessage(
+    gmailApiAdapter: GmailApiAdapter,
+    messageId: string
+  ): Promise<void> {
+    const transaction = await this._buildTransactionFromMessage(
+      gmailApiAdapter,
+      messageId
+    );
+    await this._repository.save(transaction);
+  }
+
+  private async _processTransactionAndLabelMessage(messageId: string): Promise<void> {
+    // メールにラベルを付与
+    // TODO:messageresponseの型を作成
+    const gmailApiAdapter = new GmailApiAdapter(this._oauth2Client, '');
+
+    await this._handleTransactionFromGmailMessage(gmailApiAdapter, messageId);
+    await gmailApiAdapter.addLabelToMessage(
+      messageId,
+      'Label_3417572379770606098'
+    );
+  }
+
   public async fetchTransactions(query: string) {
     const gmailApiAdapter = new GmailApiAdapter(this._oauth2Client, query);
     const response = await gmailApiAdapter.getMessageIds();
@@ -49,18 +72,7 @@ class EmailTransactionService {
       return;
     }
     for (const messageId of messageIds) {
-      // TODO:messageresponseの型を作成
-      const transaction = await this._buildTransactionFromMessage(gmailApiAdapter, String(messageId.id));
-
-      // 保存処理
-      await this._repository.save(transaction);
-      console.log(transaction.value());
-
-      // メールにラベルを付与
-      await gmailApiAdapter.addLabelToMessage(
-        String(messageId.id),
-        'Label_3417572379770606098'
-      );
+      await this._processTransactionAndLabelMessage(String(messageId.id));
     }
     // 今月の取引を取得
     const nowYear = new Date().getFullYear();
