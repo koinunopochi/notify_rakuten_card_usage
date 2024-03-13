@@ -57,6 +57,12 @@ class EmailTransactionService {
     return await this._repository.findByDateRange(yesterdayDate, yesterdayDate);
   }
 
+  private async _todayTransactions(): Promise<Transaction[]> {
+    const today = new Date();
+    const todayDate = new TransactionDate(today);
+    return await this._repository.findByDateRange(todayDate, todayDate);
+  }
+
   private async _processTransactionAndLabelMessage(
     messageId: string
   ): Promise<void> {
@@ -87,7 +93,7 @@ class EmailTransactionService {
     return totalAmount;
   }
 
-  private async _sendEmail(gmailApiAdapter: GmailApiAdapter) : Promise<void>{
+  private async _sendEmail(gmailApiAdapter: GmailApiAdapter): Promise<void> {
     // 今月の総額を作成
     const transactions = await this._getThisMonthTransactions();
     const totalAmount = this._sumTransactionValues(transactions);
@@ -98,8 +104,13 @@ class EmailTransactionService {
       yesterdayTransactions
     );
 
+    const todayTransactions = await this._todayTransactions();
+    const todayTotalAmount = this._sumTransactionValues(todayTransactions);
+
     console.log('今月の取引', transactions);
     console.log('今月の総額', totalAmount);
+    console.log('今日の取引', todayTransactions);
+    console.log('今日の総額', todayTotalAmount);
     console.log('昨日の取引', yesterdayTransactions);
     console.log('昨日の総額', yesterdayTotalAmount);
 
