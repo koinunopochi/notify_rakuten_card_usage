@@ -15,18 +15,28 @@ class EmailTransactionService {
     this._repository = repository;
   }
 
-  
   private _buildTransactionDate(date: Date): TransactionDate {
     return new TransactionDate(date);
   }
-  private _buildWithdrawalAmount(snippet: string ): WithdrawalAmount {
+  private _buildWithdrawalAmount(snippet: string): WithdrawalAmount {
     const amount = this._extractAmount(snippet);
     return new WithdrawalAmount(Number(amount));
   }
-  private _buildTransaction(date:string, snippet:string): Transaction {
+  private _buildTransaction(date: string, snippet: string): Transaction {
     const transactionDate = this._buildTransactionDate(new Date(date));
     const withdrawalAmount = this._buildWithdrawalAmount(snippet);
     return new Transaction(transactionDate, withdrawalAmount);
+  }
+
+  private async _buildTransactionFromMessage(
+    gmailApiAdapter: GmailApiAdapter,
+    messageId: string
+  ): Promise<Transaction> {
+    const res = await gmailApiAdapter.getMessage(messageId);
+    const date = String(res.data.internalDate);
+    const snippet = String(res.data.snippet);
+    const transaction = this._buildTransaction(date, snippet);
+    return transaction;
   }
 
   public async fetchTransactions(query: string) {
@@ -34,16 +44,13 @@ class EmailTransactionService {
     const response = await gmailApiAdapter.getMessageIds();
     const messageIds = response.data.messages;
     // メールがない場合
-    if (messageIds === undefined){
+    if (messageIds === undefined) {
       // 今月分の取引をメール
       return;
     }
     for (const messageId of messageIds) {
-      const res = await gmailApiAdapter.getMessage(String(messageId.id));
-      const data = res.data;
-
       // TODO:messageresponseの型を作成
-      const transaction = this._buildTransaction(String(data.internalDate), String(data.snippet));
+      const transaction = await this._buildTransactionFromMessage(gmailApiAdapter, String(messageId.id));
 
       // 保存処理
       await this._repository.save(transaction);
