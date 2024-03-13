@@ -14,13 +14,18 @@ class EmailTransactionService {
     this._oauth2Client = oauth2Client;
     this._repository = repository;
   }
+  
   private _buildTransactionDate(date: Date): TransactionDate {
     return new TransactionDate(date);
   }
-
   private _buildWithdrawalAmount(snippet: string ): WithdrawalAmount {
     const amount = this._extractAmount(snippet);
     return new WithdrawalAmount(Number(amount));
+  }
+  private _buildTransaction(date:string, snippet:string): Transaction {
+    const transactionDate = this._buildTransactionDate(new Date(date));
+    const withdrawalAmount = this._buildWithdrawalAmount(snippet);
+    return new Transaction(transactionDate, withdrawalAmount);
   }
 
   public async fetchTransactions(query: string) {
@@ -33,12 +38,8 @@ class EmailTransactionService {
       const res = await gmailApiAdapter.getMessage(String(messageId.id));
       const data = res.data;
 
-      const transactionDate = this._buildTransactionDate(
-        new Date(Number(data.internalDate))
-      );
       // TODO:messageresponseの型を作成
-      const withdrawalAmount = this._buildWithdrawalAmount(String(data.snippet));
-      const transaction = new Transaction(transactionDate, withdrawalAmount);
+      const transaction = this._buildTransaction(String(data.internalDate), String(data.snippet));
 
       // 保存処理
       await this._repository.save(transaction);
