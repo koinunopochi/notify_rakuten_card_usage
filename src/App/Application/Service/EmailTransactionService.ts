@@ -86,7 +86,8 @@ class EmailTransactionService {
     // name: '取得済み',
     await gmailApiAdapter.addLabelToMessage(
       messageId,
-      'Label_3417572379770606098'
+      'Label_3553825594615419646'
+      // 'Label_3417572379770606098'
     );
   }
   private async _getThisMonthTransactions(): Promise<Transaction[]> {
