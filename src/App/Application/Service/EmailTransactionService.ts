@@ -6,6 +6,21 @@ import Transaction from '../../Domain/Model/Transaction';
 import ITransactionRepository from '../../Domain/Interfaces/ITransactionRepository';
 import dotenv from 'dotenv';
 dotenv.config();
+
+import log4js from 'log4js';
+const logger = log4js.getLogger();
+logger.level = 'all';
+log4js.configure({
+  appenders: {
+    out: { type: 'stdout' },
+    app: { type: 'file', filename: './logs/application.log' },
+  },
+  categories: {
+    default: { appenders: ['out', 'app'], level: 'debug' },
+  },
+});
+
+
 class EmailTransactionService {
   private readonly _oauth2Client: OAuth2Client;
   private readonly _repository: ITransactionRepository;
@@ -48,7 +63,7 @@ class EmailTransactionService {
       messageId
     );
     await this._repository.save(transaction);
-    console.log('取引を登録しました', transaction);
+    logger.info('取引を保存しました');
   }
 
   private async _yesterdayTransactions(): Promise<Transaction[]> {
@@ -86,7 +101,8 @@ class EmailTransactionService {
     // name: '取得済み',
     await gmailApiAdapter.addLabelToMessage(
       messageId,
-      'Label_3417572379770606098'
+      'Label_3553825594615419646'
+      // 'Label_3417572379770606098'
     );
   }
   private async _getThisMonthTransactions(): Promise<Transaction[]> {
@@ -195,14 +211,16 @@ class EmailTransactionService {
     const messageIds = response.data.messages;
     // メールがない場合
     if (messageIds === undefined) {
-      console.log('メールがありません');
+      logger.info('メールがありません');
       await this._sendEmail(gmailApiAdapter);
       return;
     }
     for (const messageId of messageIds) {
       await this._processTransactionAndLabelMessage(String(messageId.id));
+      logger.info('取引を処理しました');
     }
     await this._sendEmail(gmailApiAdapter);
+    logger.info('メールを送信しました');
   }
 
   private _extractAmount(text: string): string | null {

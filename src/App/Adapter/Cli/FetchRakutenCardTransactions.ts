@@ -8,6 +8,19 @@ import GmailApiAdapter from '../../Infrastructure/api/GmailApiAdapter';
 import dotenv from 'dotenv';
 dotenv.config();
 
+import log4js from 'log4js';
+const logger = log4js.getLogger();
+logger.level = 'all';
+log4js.configure({
+  appenders: {
+    out: { type: 'stdout' },
+    app: { type: 'file', filename: './logs/application.log' },
+  },
+  categories: {
+    default: { appenders: ['out', 'app'], level: 'debug' },
+  },
+});
+
 async function int() {
   const readFileAsync = promisify(fs.readFile);
 
@@ -44,16 +57,18 @@ async function main() {
 mongoose
   .connect('mongodb://127.0.01:27017/rakuten-card')
   .then(() => {
-    console.log('MongoDB connected');
+    logger.info('MongoDB connected');
   })
   .catch((err) => {
-    console.log('MongoDB connection error', err);
-    process.exit();
+    logger.error('MongoDB connection error', err);
   })
   .then(() => {
     main()
+      .then(() => {
+        logger.info('main() finished');
+      })
       .catch(async (err) => {
-        console.error(err);
+        logger.error(err);
         const oauth2Client = await int();
         const query = 'query';
         const formattedStack = err.stack
@@ -89,10 +104,12 @@ mongoose
           message: htmlMessage,
         };
         await gmailApiAdapter.sendMessage(raw);
-        
       })
       .finally(() => {
         mongoose.disconnect();
-        process.exit();
+        log4js.shutdown((err) => {
+          if (err) throw err;
+          process.exit(0);
+        });
       });
   });

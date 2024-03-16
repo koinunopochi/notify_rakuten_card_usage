@@ -5,3 +5,5 @@ package-lock.json
 dist
 client_secret.json
 gmail-nodejs-quickstart.json
+
+logs/
