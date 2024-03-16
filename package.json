@@ -19,6 +19,7 @@
     "dotenv": "^16.4.5",
     "google-auth-library": "^9.6.3",
     "googleapis": "^133.0.0",
+    "log4js": "^6.9.1",
     "mongoose": "^8.2.1"
   }
 }
